@@ -14,7 +14,7 @@ class Direction(Enum):
 pygame.init()
 
 # Constants
-WINDOW_SIZE_X = 600
+WINDOW_SIZE_X = 600  # Increased window size
 WINDOW_SIZE_Y = 300
 GRID_COUNT_X = 30
 GRID_COUNT_Y = 15
@@ -22,13 +22,24 @@ GRID_SIZE = WINDOW_SIZE_Y // GRID_COUNT_Y
 
 # Colors
 BLACK = (0, 0, 0)
-WHITE = (255, 255, 255) 
-RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0) 
 GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+GRAY = (128, 128, 128)
 
 # Set up display
 screen = pygame.display.set_mode((WINDOW_SIZE_X, WINDOW_SIZE_Y))
 pygame.display.set_caption('Snake Game - Blind Search')
+
+# Load and set game icon
+icon = pygame.Surface((32, 32))
+icon.fill(GREEN)
+pygame.display.set_icon(icon)
+
+# Initialize fonts
+pygame.font.init()
+game_font = pygame.font.Font(None, 36)
 
 class SnakeGame:
     def __init__(self):
@@ -45,6 +56,18 @@ class SnakeGame:
         self.food = self.generate_food()
         self.score = 0
         self.game_over = False
+        self.high_score = self.load_high_score()
+
+    def load_high_score(self):
+        try:
+            with open("high_score.txt", "r") as f:
+                return int(f.read())
+        except:
+            return 0
+
+    def save_high_score(self):
+        with open("high_score.txt", "w") as f:
+            f.write(str(max(self.score, self.high_score)))
 
     def generate_food(self):
         # Get valid positions by subtracting snake positions from all grid positions
@@ -112,6 +135,7 @@ class SnakeGame:
         # Optimized collision check using set
         if new_head in set(self.snake):
             self.game_over = True
+            self.save_high_score()
             return
 
         self.snake.appendleft(new_head)
@@ -119,29 +143,55 @@ class SnakeGame:
         # Check if food is eaten
         if new_head == self.food:
             self.score += 1
+            if self.score > self.high_score:
+                self.high_score = self.score
             self.food = self.generate_food()
         else:
             self.snake.pop()
 
     def draw(self):
+        # Draw background
         screen.fill(BLACK)
         
-        # Batch draw calls for better performance
+        # Draw grid lines
+        for x in range(0, WINDOW_SIZE_X, GRID_SIZE):
+            pygame.draw.line(screen, GRAY, (x, 0), (x, WINDOW_SIZE_Y))
+        for y in range(0, WINDOW_SIZE_Y, GRID_SIZE):
+            pygame.draw.line(screen, GRAY, (0, y), (WINDOW_SIZE_X, y))
+        
+        # Draw food with glow effect
         food_rect = pygame.Rect(
             self.food[0] * GRID_SIZE,
             self.food[1] * GRID_SIZE,
             GRID_SIZE, GRID_SIZE
         )
-        pygame.draw.rect(screen, RED, food_rect)
+        pygame.draw.rect(screen, (200, 0, 0), food_rect)  # Darker red core
+        pygame.draw.rect(screen, RED, food_rect.inflate(-4, -4))  # Brighter red center
         
-        # Draw snake segments in one batch
-        snake_rects = [pygame.Rect(
-            segment[0] * GRID_SIZE,
-            segment[1] * GRID_SIZE,
-            GRID_SIZE, GRID_SIZE
-        ) for segment in self.snake]
-        for rect in snake_rects:
-            pygame.draw.rect(screen, GREEN, rect)
+        # Draw snake with gradient effect
+        for i, segment in enumerate(self.snake):
+            intensity = 255 - (i * 5)  # Gradient from bright to darker green
+            if intensity < 50: intensity = 50  # Minimum brightness
+            color = (0, intensity, 0)
+            snake_rect = pygame.Rect(
+                segment[0] * GRID_SIZE,
+                segment[1] * GRID_SIZE,
+                GRID_SIZE, GRID_SIZE
+            )
+            pygame.draw.rect(screen, color, snake_rect)
+            pygame.draw.rect(screen, (0, min(intensity + 50, 255), 0), snake_rect.inflate(-4, -4))
+
+        # Draw score and high score
+        score_text = game_font.render(f'Score: {self.score}', True, WHITE)
+        high_score_text = game_font.render(f'High Score: {self.high_score}', True, WHITE)
+        screen.blit(score_text, (10, 10))
+        screen.blit(high_score_text, (10, 50))
+
+        # Draw game over message
+        if self.game_over:
+            game_over_text = game_font.render('Game Over! Press R to Restart', True, RED)
+            text_rect = game_over_text.get_rect(center=(WINDOW_SIZE_X//2, WINDOW_SIZE_Y//2))
+            screen.blit(game_over_text, text_rect)
         
         pygame.display.flip()
 
