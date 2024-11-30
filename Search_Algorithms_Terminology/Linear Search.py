@@ -1,7 +1,6 @@
 import pygame
 import random
 import collections
-import math
 from enum import Enum
 
 # Initialize Pygame
@@ -24,7 +23,7 @@ class Direction(Enum):
 
 # Set up display
 screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
-pygame.display.set_caption('Snake Game - Jump Search')
+pygame.display.set_caption('Snake Game - Linear Search')
 
 class SnakeGame:
     def __init__(self):
@@ -43,8 +42,8 @@ class SnakeGame:
             if food not in self.snake:
                 return food
 
-    def jump_search(self):
-        # Jump search implementation to find path to food
+    def linear_search(self):
+        # Linear search implementation to find path to food
         head_x, head_y = self.snake[0]
         food_x, food_y = self.food
         
@@ -63,35 +62,20 @@ class SnakeGame:
         if not possible_moves:
             return None
             
-        # Sort moves by distance for jump search
-        possible_moves.sort(key=lambda x: x[0])
-        
-        # Jump search implementation
-        n = len(possible_moves)
-        step = int(math.sqrt(n))
-        
-        # Finding the block where element may be present
-        prev = 0
-        while prev < n and possible_moves[min(step, n)-1][0] < possible_moves[0][0]:
-            prev = step
-            step += int(math.sqrt(n))
-            if prev >= n:
-                return possible_moves[0][1]
+        # Linear search for the move with minimum distance to food
+        best_move = possible_moves[0]
+        for move in possible_moves[1:]:
+            if move[0] < best_move[0]:
+                best_move = move
                 
-        # Linear search in identified block
-        while prev < min(step, n):
-            if possible_moves[prev][0] == possible_moves[0][0]:
-                return possible_moves[prev][1]
-            prev += 1
-            
-        return possible_moves[0][1]
+        return best_move[1]
 
     def update(self):
         if self.game_over:
             return
 
-        # Find next move using jump search
-        next_move = self.jump_search()
+        # Find next move using linear search
+        next_move = self.linear_search()
         if next_move:
             head_x, head_y = self.snake[0]
             next_x, next_y = next_move

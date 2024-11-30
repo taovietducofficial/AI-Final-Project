@@ -1,7 +1,6 @@
 import pygame
 import random
 import collections
-import math
 from enum import Enum
 
 # Initialize Pygame
@@ -24,7 +23,7 @@ class Direction(Enum):
 
 # Set up display
 screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
-pygame.display.set_caption('Snake Game - Jump Search')
+pygame.display.set_caption('Snake Game - Binary Search')
 
 class SnakeGame:
     def __init__(self):
@@ -43,12 +42,12 @@ class SnakeGame:
             if food not in self.snake:
                 return food
 
-    def jump_search(self):
-        # Jump search implementation to find path to food
+    def binary_search(self):
+        # Binary search implementation to find path to food
         head_x, head_y = self.snake[0]
         food_x, food_y = self.food
         
-        # List all possible moves
+        # Get all possible moves
         possible_moves = []
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             new_x = (head_x + dx) % GRID_COUNT
@@ -63,35 +62,40 @@ class SnakeGame:
         if not possible_moves:
             return None
             
-        # Sort moves by distance for jump search
+        # Sort moves by distance
         possible_moves.sort(key=lambda x: x[0])
         
-        # Jump search implementation
-        n = len(possible_moves)
-        step = int(math.sqrt(n))
+        # Binary search for the best move
+        left = 0
+        right = len(possible_moves) - 1
         
-        # Finding the block where element may be present
-        prev = 0
-        while prev < n and possible_moves[min(step, n)-1][0] < possible_moves[0][0]:
-            prev = step
-            step += int(math.sqrt(n))
-            if prev >= n:
-                return possible_moves[0][1]
-                
-        # Linear search in identified block
-        while prev < min(step, n):
-            if possible_moves[prev][0] == possible_moves[0][0]:
-                return possible_moves[prev][1]
-            prev += 1
+        while left <= right:
+            mid = (left + right) // 2
+            current_move = possible_moves[mid]
             
+            # If this move leads directly to food, take it
+            if current_move[0] == 0:
+                return current_move[1]
+                
+            # Check if next move would be worse
+            if mid + 1 < len(possible_moves) and possible_moves[mid + 1][0] > current_move[0]:
+                return current_move[1]
+                
+            # Move search window based on distance comparison
+            if current_move[0] > possible_moves[left][0]:
+                right = mid - 1
+            else:
+                left = mid + 1
+                
+        # Return the first move if no better option found
         return possible_moves[0][1]
 
     def update(self):
         if self.game_over:
             return
 
-        # Find next move using jump search
-        next_move = self.jump_search()
+        # Find next move using binary search
+        next_move = self.binary_search()
         if next_move:
             head_x, head_y = self.snake[0]
             next_x, next_y = next_move
