@@ -1,39 +1,3 @@
-import pygame
-import random
-import collections
-from enum import Enum
-
-# Initialize Pygame
-pygame.init()
-
-# Constants
-WINDOW_SIZE_X = 600
-WINDOW_SIZE_Y = 300
-GRID_COUNT_X = 30
-GRID_COUNT_Y = 15
-GRID_SIZE = WINDOW_SIZE_Y // GRID_COUNT_Y
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-GRAY = (128, 128, 128)
-WHITE = (255, 255, 255)
-
-# Direction enum
-class Direction(Enum):
-    UP = 1
-    DOWN = 2
-    LEFT = 3
-    RIGHT = 4
-
-# Set up display
-screen = pygame.display.set_mode((WINDOW_SIZE_X, WINDOW_SIZE_Y))
-pygame.display.set_caption('Snake Game - Seeking Comfort')
-
-# Initialize fonts
-pygame.font.init()
-game_font = pygame.font.Font(None, 36)
-
 class SnakeGame:
     def __init__(self):
         self.reset()

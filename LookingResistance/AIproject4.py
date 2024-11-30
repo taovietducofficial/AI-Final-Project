@@ -2,6 +2,7 @@ import pygame
 import random
 import collections
 from enum import Enum
+import heapq
 
 # Initialize Pygame
 pygame.init()
@@ -36,16 +37,24 @@ game_font = pygame.font.Font(None, 36)
 
 class SnakeGame:
     def __init__(self):
+        # Cache movement vectors for faster lookup
+        self.movement_vectors = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        # Pre-calculate grid positions
+        self.grid_positions = set((x, y) for x in range(GRID_COUNT_X) for y in range(GRID_COUNT_Y))
         self.reset()
         self.high_score = self.load_high_score()
 
     def reset(self):
+        # Initialize snake at center
         self.snake = collections.deque([(GRID_COUNT_X//2, GRID_COUNT_Y//2)])
         self.direction = Direction.RIGHT
-        self.resistance_points = []  # Points that resist/block the snake's path
+        # Initialize resistance points that block snake's path
+        self.resistance_points = []
         self.food = self.generate_food()
         self.score = 0
         self.game_over = False
+        # Cache for resistance calculations
+        self.resistance_cache = {}
 
     def load_high_score(self):
         try:
@@ -59,74 +68,126 @@ class SnakeGame:
             f.write(str(max(self.score, self.high_score)))
 
     def generate_food(self):
-        while True:
-            food = (random.randint(0, GRID_COUNT_X-1), random.randint(0, GRID_COUNT_Y-1))
-            if food not in self.snake and food not in self.resistance_points:
-                return food
+        # Generate food in available positions
+        available_positions = self.grid_positions - set(self.snake) - set(self.resistance_points)
+        return random.choice(tuple(available_positions))
                 
     def generate_resistance(self):
-        # Generate resistance points that try to block optimal paths
+        # Get current head and food positions
         head_x, head_y = self.snake[0]
         food_x, food_y = self.food
         
-        # Clear old resistance points
+        # Clear old resistance points and cache
         self.resistance_points = []
+        self.resistance_cache.clear()
         
-        # Try to place resistance points between snake and food
-        for _ in range(3):  # Place 3 resistance points
-            mid_x = (head_x + food_x) // 2 + random.randint(-2, 2)
-            mid_y = (head_y + food_y) // 2 + random.randint(-2, 2)
-            
-            # Ensure points are within bounds
-            mid_x = mid_x % GRID_COUNT_X
-            mid_y = mid_y % GRID_COUNT_Y
-            
-            resistance_point = (mid_x, mid_y)
-            if resistance_point not in self.snake and resistance_point != self.food:
-                self.resistance_points.append(resistance_point)
+        # Calculate optimal path area between head and food
+        path_area = set()
+        min_x, max_x = sorted([head_x, food_x])
+        min_y, max_y = sorted([head_y, food_y])
+        
+        # Expand area by 2 in each direction to create resistance zone
+        for x in range(max(0, min_x - 2), min(GRID_COUNT_X, max_x + 3)):
+            for y in range(max(0, min_y - 2), min(GRID_COUNT_Y, max_y + 3)):
+                path_area.add((x, y))
+        
+        # Generate resistance points in path area
+        available_positions = path_area - set(self.snake) - {self.food}
+        num_points = min(3, len(available_positions))
+        self.resistance_points = random.sample(tuple(available_positions), num_points)
+
+    def manhattan_distance(self, pos1, pos2):
+        # Calculate Manhattan distance between two points
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
     def looking_resistance_search(self):
-        # Implementation of adversarial search considering resistance points
-        head_x, head_y = self.snake[0]
-        food_x, food_y = self.food
+        # Get current head position
+        head = self.snake[0]
         
-        # Get all possible moves
-        possible_moves = []
-        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-            new_x = (head_x + dx) % GRID_COUNT_X
-            new_y = (head_y + dy) % GRID_COUNT_Y
+        # Return cached result if available
+        if head in self.resistance_cache:
+            return self.resistance_cache[head]
+            
+        # A* pathfinding implementation
+        frontier = [(self.manhattan_distance(head, self.food), 0, head, [])]
+        visited = {head}
+        
+        while frontier:
+            _, cost, current, path = heapq.heappop(frontier)
+            
+            # Return next position if food found
+            if current == self.food:
+                next_pos = path[0] if path else current
+                self.resistance_cache[head] = next_pos
+                return next_pos
+                
+            # Explore neighboring positions
+            for dx, dy in self.movement_vectors:
+                next_x = (current[0] + dx) % GRID_COUNT_X
+                next_y = (current[1] + dy) % GRID_COUNT_Y
+                next_pos = (next_x, next_y)
+                
+                # Check if position is valid
+                if next_pos not in visited and next_pos not in self.snake and next_pos not in self.resistance_points:
+                    visited.add(next_pos)
+                    new_path = [next_pos] + path if not path else path
+                    new_cost = cost + 1
+                    priority = new_cost + self.manhattan_distance(next_pos, self.food)
+                    heapq.heappush(frontier, (priority, new_cost, next_pos, new_path))
+        
+        # If no path found, find safe move
+        return self.find_safe_move(head)
+        
+    def find_safe_move(self, head):
+        # Initialize variables for best move
+        best_move = None
+        best_score = float('-inf')
+        
+        # Check all possible moves
+        for dx, dy in self.movement_vectors:
+            new_x = (head[0] + dx) % GRID_COUNT_X
+            new_y = (head[1] + dy) % GRID_COUNT_Y
             new_pos = (new_x, new_y)
             
+            # Score move based on available space and food distance
             if new_pos not in self.snake and new_pos not in self.resistance_points:
-                # Calculate weighted score based on:
-                # 1. Distance to food
-                # 2. Distance to nearest resistance point
-                food_distance = abs(new_x - food_x) + abs(new_y - food_y)
+                space_score = len(self.get_available_space(new_pos))
+                food_score = -self.manhattan_distance(new_pos, self.food)
+                total_score = space_score + food_score
                 
-                # Find minimum distance to resistance points
-                min_resistance_dist = GRID_COUNT_X * 2  # Max possible distance
-                for rx, ry in self.resistance_points:
-                    resistance_dist = abs(new_x - rx) + abs(new_y - ry)
-                    min_resistance_dist = min(min_resistance_dist, resistance_dist)
-                
-                # Score = food distance - resistance distance weight
-                # Lower score is better
-                score = food_distance - (min_resistance_dist * 0.5)
-                possible_moves.append((score, new_pos))
+                if total_score > best_score:
+                    best_score = total_score
+                    best_move = new_pos
+                    
+        return best_move
         
-        if not possible_moves:
-            return None
-            
-        # Find move with best score
-        best_move = min(possible_moves, key=lambda x: x[0])
-        return best_move[1]
+    def get_available_space(self, pos):
+        # Use flood fill to count available space
+        space = set()
+        queue = collections.deque([pos])
+        
+        while queue and len(space) < 10:  # Limit check to nearby area
+            current = queue.popleft()
+            if current not in space:
+                space.add(current)
+                
+                # Check neighboring positions
+                for dx, dy in self.movement_vectors:
+                    next_x = (current[0] + dx) % GRID_COUNT_X
+                    next_y = (current[1] + dy) % GRID_COUNT_Y
+                    next_pos = (next_x, next_y)
+                    
+                    if next_pos not in space and next_pos not in self.snake and next_pos not in self.resistance_points:
+                        queue.append(next_pos)
+                        
+        return space
 
     def update(self):
         if self.game_over:
             return
 
-        # Generate new resistance points periodically
-        if random.random() < 0.1:  # 10% chance each update
+        # Generate new resistance points with 10% chance
+        if random.random() < 0.1:
             self.generate_resistance()
 
         # Find next move using looking resistance search
@@ -135,15 +196,14 @@ class SnakeGame:
             head_x, head_y = self.snake[0]
             next_x, next_y = next_move
             
-            # Determine direction based on next move
-            if next_x == (head_x + 1) % GRID_COUNT_X:
-                self.direction = Direction.RIGHT
-            elif next_x == (head_x - 1) % GRID_COUNT_X:
-                self.direction = Direction.LEFT
-            elif next_y == (head_y + 1) % GRID_COUNT_Y:
-                self.direction = Direction.DOWN
-            elif next_y == (head_y - 1) % GRID_COUNT_Y:
-                self.direction = Direction.UP
+            # Update direction based on next move
+            dx = (next_x - head_x) % GRID_COUNT_X
+            dy = (next_y - head_y) % GRID_COUNT_Y
+            
+            if dx == 1: self.direction = Direction.RIGHT
+            elif dx == GRID_COUNT_X - 1: self.direction = Direction.LEFT
+            elif dy == 1: self.direction = Direction.DOWN
+            elif dy == GRID_COUNT_Y - 1: self.direction = Direction.UP
 
         # Move snake
         head_x, head_y = self.snake[0]
@@ -170,6 +230,7 @@ class SnakeGame:
             if self.score > self.high_score:
                 self.high_score = self.score
             self.food = self.generate_food()
+            self.resistance_cache.clear()  # Clear cache when food position changes
         else:
             self.snake.pop()
 
