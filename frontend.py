@@ -12,8 +12,8 @@ pygame.init()
 # Constants for window layout
 WINDOW_WIDTH = 1920  # Total width
 WINDOW_HEIGHT = 1080  # Total height
-GAME_WIDTH = 500  # Width of each game window
-GAME_HEIGHT = 500  # Height of each game window
+GAME_WIDTH = 600  # Width of each game window
+GAME_HEIGHT = 300  # Height of each game window
 COLUMNS = 3  # Number of columns in the layout
 MARGIN = 50  # Margin between windows
 
@@ -93,7 +93,8 @@ class GameLauncher:
             card.grid(row=row, column=col, padx=15, pady=15, sticky="nsew")
             
             # Create game frame for embedding
-            game_frame = ttk.Frame(card)
+            game_frame = ttk.Frame(card, width=GAME_WIDTH, height=GAME_HEIGHT)
+            game_frame.pack_propagate(False)  # Prevent frame from shrinking
             game_frame.pack(expand=True, fill='both')
             self.game_frames[game["name"]] = game_frame
             

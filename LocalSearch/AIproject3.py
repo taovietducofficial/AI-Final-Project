@@ -7,9 +7,11 @@ from enum import Enum
 pygame.init()
 
 # Constants
-WINDOW_SIZE = 600
-GRID_COUNT = 20
-GRID_SIZE = WINDOW_SIZE // GRID_COUNT
+WINDOW_SIZE_X = 600
+WINDOW_SIZE_Y = 300
+GRID_COUNT_X = 30
+GRID_COUNT_Y = 15
+GRID_SIZE = WINDOW_SIZE_Y // GRID_COUNT_Y
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -22,7 +24,7 @@ class Direction(Enum):
     RIGHT = 4
 
 # Set up display
-screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
+screen = pygame.display.set_mode((WINDOW_SIZE_X, WINDOW_SIZE_Y))
 pygame.display.set_caption('Snake Game - Local Search')
 
 class SnakeGame:
@@ -30,7 +32,7 @@ class SnakeGame:
         self.reset()
 
     def reset(self):
-        self.snake = collections.deque([(GRID_COUNT//2, GRID_COUNT//2)])
+        self.snake = collections.deque([(GRID_COUNT_X//2, GRID_COUNT_Y//2)])
         self.direction = Direction.RIGHT
         self.food = self.generate_food()
         self.score = 0
@@ -38,7 +40,7 @@ class SnakeGame:
 
     def generate_food(self):
         while True:
-            food = (random.randint(0, GRID_COUNT-1), random.randint(0, GRID_COUNT-1))
+            food = (random.randint(0, GRID_COUNT_X-1), random.randint(0, GRID_COUNT_Y-1))
             if food not in self.snake:
                 return food
 
@@ -50,8 +52,8 @@ class SnakeGame:
         # Get all possible moves
         possible_moves = []
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-            new_x = (head_x + dx) % GRID_COUNT
-            new_y = (head_y + dy) % GRID_COUNT
+            new_x = (head_x + dx) % GRID_COUNT_X
+            new_y = (head_y + dy) % GRID_COUNT_Y
             new_pos = (new_x, new_y)
             
             if new_pos not in self.snake:
@@ -77,25 +79,25 @@ class SnakeGame:
             next_x, next_y = next_move
             
             # Determine direction based on next move
-            if next_x == (head_x + 1) % GRID_COUNT:
+            if next_x == (head_x + 1) % GRID_COUNT_X:
                 self.direction = Direction.RIGHT
-            elif next_x == (head_x - 1) % GRID_COUNT:
+            elif next_x == (head_x - 1) % GRID_COUNT_X:
                 self.direction = Direction.LEFT
-            elif next_y == (head_y + 1) % GRID_COUNT:
+            elif next_y == (head_y + 1) % GRID_COUNT_Y:
                 self.direction = Direction.DOWN
-            elif next_y == (head_y - 1) % GRID_COUNT:
+            elif next_y == (head_y - 1) % GRID_COUNT_Y:
                 self.direction = Direction.UP
 
         # Move snake
         head_x, head_y = self.snake[0]
         if self.direction == Direction.RIGHT:
-            new_head = ((head_x + 1) % GRID_COUNT, head_y)
+            new_head = ((head_x + 1) % GRID_COUNT_X, head_y)
         elif self.direction == Direction.LEFT:
-            new_head = ((head_x - 1) % GRID_COUNT, head_y)
+            new_head = ((head_x - 1) % GRID_COUNT_X, head_y)
         elif self.direction == Direction.DOWN:
-            new_head = (head_x, (head_y + 1) % GRID_COUNT)
+            new_head = (head_x, (head_y + 1) % GRID_COUNT_Y)
         else:  # UP
-            new_head = (head_x, (head_y - 1) % GRID_COUNT)
+            new_head = (head_x, (head_y - 1) % GRID_COUNT_Y)
 
         # Check collision with self
         if new_head in self.snake:

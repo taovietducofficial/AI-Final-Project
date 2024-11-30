@@ -14,92 +14,103 @@ class Direction(Enum):
 pygame.init()
 
 # Constants
-WINDOW_SIZE = 600
-GRID_SIZE = 20
-GRID_COUNT = WINDOW_SIZE // GRID_SIZE
+WINDOW_SIZE_X = 600
+WINDOW_SIZE_Y = 300
+GRID_COUNT_X = 30
+GRID_COUNT_Y = 15
+GRID_SIZE = WINDOW_SIZE_Y // GRID_COUNT_Y
 
 # Colors
 BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
+WHITE = (255, 255, 255) 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
 # Set up display
-screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
+screen = pygame.display.set_mode((WINDOW_SIZE_X, WINDOW_SIZE_Y))
 pygame.display.set_caption('Snake Game - Blind Search')
 
 class SnakeGame:
     def __init__(self):
+        # Cache movement vectors
+        self.movement_vectors = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        # Pre-calculate grid positions
+        self.grid_positions = set((x, y) for x in range(GRID_COUNT_X) for y in range(GRID_COUNT_Y))
         self.reset()
 
     def reset(self):
         # Initial snake position (middle of screen)
-        self.snake = collections.deque([(GRID_COUNT//2, GRID_COUNT//2)])
+        self.snake = collections.deque([(GRID_COUNT_X//2, GRID_COUNT_Y//2)])
         self.direction = Direction.RIGHT
         self.food = self.generate_food()
         self.score = 0
         self.game_over = False
 
     def generate_food(self):
-        while True:
-            food = (random.randint(0, GRID_COUNT-1), random.randint(0, GRID_COUNT-1))
-            if food not in self.snake:
-                return food
+        # Get valid positions by subtracting snake positions from all grid positions
+        valid_positions = self.grid_positions - set(self.snake)
+        return random.choice(tuple(valid_positions))
 
     def blind_search(self):
-        # Simple BFS to find path to food
+        # Optimized BFS with early exit and efficient data structures
         queue = collections.deque([(self.snake[0], [])])
-        visited = set()
+        visited = {self.snake[0]}
+        snake_set = set(self.snake)
+        target = self.food
         
         while queue:
             pos, path = queue.popleft()
-            if pos == self.food:
+            if pos == target:
                 return path[0] if path else None
 
-            for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-                new_x = (pos[0] + dx) % GRID_COUNT
-                new_y = (pos[1] + dy) % GRID_COUNT
+            # Use cached movement vectors
+            for dx, dy in self.movement_vectors:
+                new_x = (pos[0] + dx) % GRID_COUNT_X
+                new_y = (pos[1] + dy) % GRID_COUNT_Y
                 new_pos = (new_x, new_y)
                 
-                if new_pos not in visited and new_pos not in self.snake:
+                if new_pos not in visited and new_pos not in snake_set:
                     visited.add(new_pos)
                     new_path = path + [new_pos]
                     queue.append((new_pos, new_path))
+                    
+                    # Early exit if we found food
+                    if new_pos == target:
+                        return new_path[0]
         return None
 
     def update(self):
         if self.game_over:
             return
 
-        # Find next move using blind search
+        # Find next move using optimized blind search
         next_move = self.blind_search()
         if next_move:
             head_x, head_y = self.snake[0]
             next_x, next_y = next_move
             
-            # Determine direction based on next move
-            if next_x == (head_x + 1) % GRID_COUNT:
-                self.direction = Direction.RIGHT
-            elif next_x == (head_x - 1) % GRID_COUNT:
-                self.direction = Direction.LEFT
-            elif next_y == (head_y + 1) % GRID_COUNT:
-                self.direction = Direction.DOWN
-            elif next_y == (head_y - 1) % GRID_COUNT:
-                self.direction = Direction.UP
+            # Optimized direction determination using modulo arithmetic
+            dx = (next_x - head_x) % GRID_COUNT_X
+            dy = (next_y - head_y) % GRID_COUNT_Y
+            
+            if dx == 1: self.direction = Direction.RIGHT
+            elif dx == GRID_COUNT_X - 1: self.direction = Direction.LEFT
+            elif dy == 1: self.direction = Direction.DOWN
+            elif dy == GRID_COUNT_Y - 1: self.direction = Direction.UP
 
-        # Move snake
+        # Move snake with optimized direction handling
         head_x, head_y = self.snake[0]
         if self.direction == Direction.RIGHT:
-            new_head = ((head_x + 1) % GRID_COUNT, head_y)
+            new_head = ((head_x + 1) % GRID_COUNT_X, head_y)
         elif self.direction == Direction.LEFT:
-            new_head = ((head_x - 1) % GRID_COUNT, head_y)
+            new_head = ((head_x - 1) % GRID_COUNT_X, head_y)
         elif self.direction == Direction.DOWN:
-            new_head = (head_x, (head_y + 1) % GRID_COUNT)
+            new_head = (head_x, (head_y + 1) % GRID_COUNT_Y)
         else:  # UP
-            new_head = (head_x, (head_y - 1) % GRID_COUNT)
+            new_head = (head_x, (head_y - 1) % GRID_COUNT_Y)
 
-        # Check collision with self
-        if new_head in self.snake:
+        # Optimized collision check using set
+        if new_head in set(self.snake):
             self.game_over = True
             return
 
@@ -115,7 +126,7 @@ class SnakeGame:
     def draw(self):
         screen.fill(BLACK)
         
-        # Draw food
+        # Batch draw calls for better performance
         food_rect = pygame.Rect(
             self.food[0] * GRID_SIZE,
             self.food[1] * GRID_SIZE,
@@ -123,14 +134,14 @@ class SnakeGame:
         )
         pygame.draw.rect(screen, RED, food_rect)
         
-        # Draw snake
-        for segment in self.snake:
-            snake_rect = pygame.Rect(
-                segment[0] * GRID_SIZE,
-                segment[1] * GRID_SIZE,
-                GRID_SIZE, GRID_SIZE
-            )
-            pygame.draw.rect(screen, GREEN, snake_rect)
+        # Draw snake segments in one batch
+        snake_rects = [pygame.Rect(
+            segment[0] * GRID_SIZE,
+            segment[1] * GRID_SIZE,
+            GRID_SIZE, GRID_SIZE
+        ) for segment in self.snake]
+        for rect in snake_rects:
+            pygame.draw.rect(screen, GREEN, rect)
         
         pygame.display.flip()
 
