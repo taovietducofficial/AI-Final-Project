@@ -29,7 +29,11 @@ def find_path(snake, food, visited, path):
     if head == food:
         return True
 
-    for direction in DIRECTIONS.values():
+    # Sắp xếp các hướng theo khoảng cách đến thức ăn
+    directions = list(DIRECTIONS.values())
+    directions.sort(key=lambda d: abs(head[0] + d[0] - food[0]) + abs(head[1] + d[1] - food[1]))
+
+    for direction in directions:
         next_cell = (head[0] + direction[0], head[1] + direction[1])
 
         # Kiểm tra ô hợp lệ
@@ -81,11 +85,24 @@ while running:
             pygame.draw.rect(screen, WHITE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
     
     # Vẽ rắn
-    for segment in snake:
-        pygame.draw.rect(screen, GREEN, (segment[0] * CELL_SIZE + 1, segment[1] * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2))
+    for i, segment in enumerate(snake):
+        color = GREEN
+        if i == len(snake) - 1:  # Đầu rắn
+            pygame.draw.rect(screen, color, (segment[0] * CELL_SIZE + 1, segment[1] * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2))
+            # Vẽ mắt
+            pygame.draw.circle(screen, WHITE, 
+                (int(segment[0] * CELL_SIZE + CELL_SIZE//4), 
+                 int(segment[1] * CELL_SIZE + CELL_SIZE//4)), 3)
+            pygame.draw.circle(screen, WHITE,
+                (int(segment[0] * CELL_SIZE + 3*CELL_SIZE//4),
+                 int(segment[1] * CELL_SIZE + CELL_SIZE//4)), 3)
+        else:  # Thân rắn
+            pygame.draw.rect(screen, color, (segment[0] * CELL_SIZE + 1, segment[1] * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2))
     
-    # Vẽ thức ăn
-    pygame.draw.rect(screen, RED, (food[0] * CELL_SIZE + 1, food[1] * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2))
+    # Vẽ thức ăn (hình tròn)
+    pygame.draw.circle(screen, RED,
+        (int(food[0] * CELL_SIZE + CELL_SIZE//2),
+         int(food[1] * CELL_SIZE + CELL_SIZE//2)), CELL_SIZE//3)
 
     # Tìm đường
     path = []
@@ -124,7 +141,7 @@ while running:
 
     # Kiểm tra va chạm
     head = snake[-1]
-    if head in snake[:-1]:
+    if head in snake[:-1]:  # Kiểm tra đầu rắn có đụng vào thân hay không
         print(f"Game Over! Score: {score}")
         running = False
         continue
