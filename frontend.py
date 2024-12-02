@@ -19,22 +19,97 @@ MARGIN = 50  # Margin between windows
 
 # Game configurations
 games = [
+    # Tìm kiếm thông tin
     {
-        "name": "Snake Game with Hill Climbing Search",
-        "description": "Snake game using hill climbing search algorithm to find path to food",
-        "path": "LocalSearch/HillClimbing.py",
+        "name": "Snake Game with Best First Search",
+        "description": "Snake game using best first search algorithm to find path to food",
+        "path": "TimKiemThongTin/BestFirstSearch.py",
+        "icon": "icons/snake.png"
+    },
+    {
+        "name": "Snake Game with A* Search",
+        "description": "Snake game using A* search algorithm to find path to food",
+        "path": "TimKiemThongTin/A_search.py",
+        "icon": "icons/snake.png"
+    },
+    
+    # Tìm kiếm mù
+    {
+        "name": "Snake Game with Uniform Cost Search",
+        "description": "Snake game using uniform cost search algorithm",
+        "path": "TimKiemMu/UniformCostSearch.py",
+        "icon": "icons/snake.png"
+    },
+    {
+        "name": "Snake Game with Depth First Search",
+        "description": "Snake game using depth first search algorithm",
+        "path": "TimKiemMu/DepthFirstSearch.py",
+        "icon": "icons/snake.png"
+    },
+    {
+        "name": "Snake Game with Depth Limited Search",
+        "description": "Snake game using depth limited search algorithm",
+        "path": "TimKiemMu/DepthLimitedSearch.py",
+        "icon": "icons/snake.png"
+    },
+    {
+        "name": "Snake Game with Iterative Deepening DFS",
+        "description": "Snake game using iterative deepening depth first search",
+        "path": "TimKiemMu/IterativeDeepeningDFS.py",
+        "icon": "icons/snake.png"
+    },
+
+    # Local Search
+    {
+        "name": "Snake Game with Hill Climbing",
+        "description": "Snake game using hill climbing search algorithm",
+        "path": "LocalSearch/Hill-Climbing.py",
         "icon": "icons/snake.png"
     },
     {
         "name": "Snake Game with Simulated Annealing",
-        "description": "Snake game using simulated annealing algorithm to find path to food", 
+        "description": "Snake game using simulated annealing algorithm", 
         "path": "LocalSearch/SimulatedAnnealing.py",
         "icon": "icons/snake.png"
     },
     {
-        "name": "Snake Game with Local Beam Search",
-        "description": "Snake game using local beam search algorithm to find path to food",
-        "path": "LocalSearch/LocalBeamSearch.py", 
+        "name": "Snake Game with Beam Search",
+        "description": "Snake game using beam search algorithm",
+        "path": "LocalSearch/BeamSearch.py",
+        "icon": "icons/snake.png"
+    },
+    {
+        "name": "Snake Game with Genetic Algorithm",
+        "description": "Snake game using genetic algorithm",
+        "path": "LocalSearch/GeneticAlgorithms.py",
+        "icon": "icons/snake.png"
+    },
+    {
+        "name": "Snake Game with Gradient Descent",
+        "description": "Snake game using gradient descent algorithm",
+        "path": "LocalSearch/GradientDescent.py",
+        "icon": "icons/snake.png"
+    },
+
+    # Tìm kiếm đối kháng
+    {
+        "name": "Snake Game with Minimax",
+        "description": "Snake game using minimax algorithm",
+        "path": "TimKiemDoiKhang/Minimax.py",
+        "icon": "icons/snake.png"
+    },
+    {
+        "name": "Snake Game with Alpha-Beta Pruning",
+        "description": "Snake game using alpha-beta pruning algorithm",
+        "path": "TimKiemDoiKhang/AlphaBetaPruning.py",
+        "icon": "icons/snake.png"
+    },
+
+    # Tìm kiếm thỏa mãn điều kiện
+    {
+        "name": "Snake Game with Backtracking",
+        "description": "Snake game using backtracking search algorithm",
+        "path": "TimKiemThoaManDieuKien/Backtracking.py",
         "icon": "icons/snake.png"
     }
 ]
@@ -63,6 +138,9 @@ class GameLauncher:
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(expand=True, fill='both', padx=20, pady=20)
         
+        # Add "Launch All" button
+        self.create_launch_all_button()
+        
         # Create game cards
         self.create_game_cards()
         
@@ -70,10 +148,19 @@ class GameLauncher:
         self.status_bar = ttk.Label(self.root, text="Ready to launch games", relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         
+    def create_launch_all_button(self):
+        launch_all_btn = ttk.Button(
+            self.main_frame,
+            text="Launch All Games",
+            style='Launch.TButton',
+            command=self.launch_all_games
+        )
+        launch_all_btn.grid(row=0, column=0, columnspan=COLUMNS, pady=15, sticky="ew")
+    
     def create_game_cards(self):
         for i, game in enumerate(games):
             # Calculate grid position
-            row = i // COLUMNS
+            row = (i // COLUMNS) + 1  # Adjust row to account for "Launch All" button
             col = i % COLUMNS
             
             # Create card frame with hover effect
@@ -133,18 +220,11 @@ class GameLauncher:
             
     def launch_game(self, game):
         try:
-            # Get game frame
-            game_frame = self.game_frames[game["name"]]
-            
             # Update status bar
             self.status_bar.configure(text=f"Launching {game['name']}...")
             
-            # Launch game process with window ID
-            env = os.environ.copy()
-            env['SDL_WINDOWID'] = str(game_frame.winfo_id())
-            
             # Launch game process
-            process = subprocess.Popen(['python', game["path"]], env=env)
+            process = subprocess.Popen(['python', game["path"]])
             self.processes.append(process)
             
             # Update status after successful launch
@@ -153,28 +233,25 @@ class GameLauncher:
         except Exception as e:
             self.status_bar.configure(text=f"Error launching {game['name']}")
             messagebox.showerror("Error", f"Failed to launch {game['name']}: {str(e)}")
+    
+    def launch_all_games(self):
+        """Launch all games simultaneously."""
+        try:
+            for game in games:
+                # Launch game process
+                process = subprocess.Popen(['python', game["path"]])
+                self.processes.append(process)
             
+            # Update status after successful launch
+            self.status_bar.configure(text="All games launched successfully")
+            messagebox.showinfo("Success", "All games launched successfully!")
+        except Exception as e:
+            self.status_bar.configure(text="Error launching all games")
+            messagebox.showerror("Error", f"Failed to launch all games: {str(e)}")
+    
     def run(self):
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window closing
         self.root.mainloop()
-        
-    def cleanup(self):
-        for process in self.processes:
-            try:
-                process.terminate()
-            except:
-                pass
-                
-    def on_closing(self):
-        if messagebox.askokcancel("Quit", "Do you want to quit? All running games will be closed."):
-            self.cleanup()
-            self.root.destroy()
-            sys.exit()
 
-if __name__ == "__main__":
-    launcher = GameLauncher()
-    try:
-        launcher.run()
-    finally:
-        launcher.cleanup()
-        sys.exit()
+# Create game launcher instance
+launcher = GameLauncher()
+launcher.run()
