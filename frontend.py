@@ -20,34 +20,22 @@ MARGIN = 50  # Margin between windows
 # Game configurations
 games = [
     {
-        "path": "BlindSearch/AIproject1.py",
-        "name": "Blind Search Snake",
-        "description": "Snake game using blind search algorithms",
-        "icon": "icons/blind_search.png"
+        "name": "Snake Game with Hill Climbing Search",
+        "description": "Snake game using hill climbing search algorithm to find path to food",
+        "path": "LocalSearch/HillClimbing.py",
+        "icon": "icons/snake.png"
     },
     {
-        "path": "Search_Algorithms_Terminology/Binary_Search.py", 
-        "name": "Binary Search Snake",
-        "description": "Snake game demonstrating binary search",
-        "icon": "icons/binary_search.png"
+        "name": "Snake Game with Simulated Annealing",
+        "description": "Snake game using simulated annealing algorithm to find path to food", 
+        "path": "LocalSearch/SimulatedAnnealing.py",
+        "icon": "icons/snake.png"
     },
     {
-        "path": "LocalSearch/AIproject3.py",
-        "name": "Local Search Snake", 
-        "description": "Snake game with local search optimization",
-        "icon": "icons/local_search.png"
-    },
-    {
-        "path": "LookingResistance/AIproject4.py",
-        "name": "Looking Resistance Snake",
-        "description": "Snake game with resistance mechanics",
-        "icon": "icons/resistance.png"
-    },
-    {
-        "path": "SeekingComfort/AIproject5.py",
-        "name": "Seeking Comfort Snake",
-        "description": "Snake game with comfort-seeking behavior",
-        "icon": "icons/comfort.png"
+        "name": "Snake Game with Local Beam Search",
+        "description": "Snake game using local beam search algorithm to find path to food",
+        "path": "LocalSearch/LocalBeamSearch.py", 
+        "icon": "icons/snake.png"
     }
 ]
 
