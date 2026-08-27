@@ -1,50 +1,47 @@
 # AI Final Project
 
-Final project applying Artificial Intelligence and Machine Learning to solve a practical problem through data preprocessing, model training, evaluation, and prediction.
+A Python-based Artificial Intelligence project implementing multiple search and problem-solving techniques.
 
-## Workflow
+## Features
+
+* Local Search
+* Adversarial Search
+* Minimax Search
+* Constraint Satisfaction Problem (CSP)
+* Information Search
+* Interactive frontend
+
+## Project Structure
 
 ```text
-Data → Preprocessing → Feature Engineering → Model Training → Evaluation → Prediction
+AI-Final-Project/
+├── LocalSearch/
+├── TimKiemDoiKhang/
+├── TimKiemMu/
+├── TimKiemThoaManDK/
+├── TimKiemThongTin/
+├── frontend.py
+└── README.md
 ```
 
 ## Technologies
 
 * Python
 * Artificial Intelligence
-* Machine Learning
-* Data Processing
-* Jupyter Notebook
+* Search Algorithms
+* Problem Solving
 
-## Installation
+## Run
 
 ```bash
 git clone https://github.com/taovietducofficial/AI-Final-Project.git
 cd AI-Final-Project
-pip install -r requirements.txt
-```
-
-## Project Structure
-
-```text
-AI-Final-Project/
-├── data/
-├── notebooks/
-├── src/
-├── models/
-├── results/
-├── requirements.txt
-└── README.md
+python frontend.py
 ```
 
 ## Learning Outcomes
 
-* AI & Machine Learning
-* Data Preprocessing
-* Feature Engineering
-* Model Training & Evaluation
-* Python Programming
-* Problem Solving
+This project demonstrates practical implementation of fundamental AI search techniques, including state-space search, adversarial decision making, constraint satisfaction, and information retrieval.
 
 ## Author
 
@@ -52,4 +49,4 @@ AI-Final-Project/
 
 GitHub: https://github.com/taovietducofficial
 
-> Educational project developed for academic and practical AI learning.
+> Final project developed for studying and applying fundamental Artificial Intelligence algorithms.
